@@ -81,10 +81,11 @@ int main()
 			case 2: global_thread_pool.AddTask(std::shared_ptr<Task2>(new Task2(43.321f, 70))); break;
 			case 3: global_thread_pool.AddTask(std::shared_ptr<Task3>(new Task3(false))); break;
 		}
-	while (true)
+	user_input = 20000;
+	while (--user_input)
 		global_thread_pool.AddTask(std::shared_ptr<Task1>(new Task1(1))),
-		std::this_thread::sleep_for(std::chrono::microseconds(1));
-
+		std::this_thread::sleep_for(std::chrono::microseconds(100));
+	std::this_thread::sleep_for(std::chrono::seconds(100));
 	return 0;
 }
 

@@ -3,7 +3,6 @@
 #include <unordered_map>
 #include <vector>
 #include <queue>
-//#include <chrono>
 
 template <typename Executable, template <typename> typename FancyPtrT> class ThreadPool
 {
@@ -19,8 +18,6 @@ template <typename Executable, template <typename> typename FancyPtrT> class Thr
 				id(_id),
 				priority(_prior)
 			{}
-
-			//Task() {}
 
 			inline const ExecutablePtr& GetExecutable() const { return executable; }
 
@@ -42,7 +39,7 @@ template <typename Executable, template <typename> typename FancyPtrT> class Thr
 
 			inline bool IsFree() const { return !executable_ptr; }
 
-			inline void WaitTaskForFinished() const { while (!IsFree()) Sleep(); }
+			inline void WaitTaskForFinished() const { while (!IsFree()) Sleep(50); }
 
 			void AcceptTask(const ExecutablePtr&& _task) { executable_ptr = _task; }
 
@@ -55,7 +52,7 @@ template <typename Executable, template <typename> typename FancyPtrT> class Thr
 					if (executable_ptr)
 						executable_ptr->execute(),
 						executable_ptr.reset();
-					else Sleep();
+					else Sleep(1);
 			};
 
 			//const Task& GetLastTask() const { return task; }
@@ -68,7 +65,7 @@ template <typename Executable, template <typename> typename FancyPtrT> class Thr
 	TaskIdType tasks_accepted = 0;
 	std::unordered_map<TaskIdType, Thread*> task_assignment_map;
 
-	static inline void Sleep() { std::this_thread::sleep_for(std::chrono::milliseconds(1)); }
+	static inline void Sleep(const std::size_t ms) { std::this_thread::sleep_for(std::chrono::milliseconds(ms)); }
 
 	const std::function<void(const std::size_t)> main_loop = [&](const std::size_t pool_capacity)
 	{
@@ -88,6 +85,7 @@ template <typename Executable, template <typename> typename FancyPtrT> class Thr
 		const Task* task;
 		TaskIdType task_id;
 		while (true)
+		{
 			if ((tasks_available = task_queue.size()) && free_threads_available)
 			{
 				queue_mutex.lock();
@@ -101,19 +99,17 @@ template <typename Executable, template <typename> typename FancyPtrT> class Thr
 					task_queue.pop();
 				queue_mutex.unlock();
 			}
-			else
+			Sleep(5);
+			if (free_threads_available < pool_capacity)
 			{
-				Sleep();
-				if (free_threads_available < pool_capacity)
-				{
-					queue_mutex.lock();
-					for (i = free_threads_available; i < pool_capacity; ++i)
-						if (thread_ptrs[i]->IsFree())
-							std::swap(thread_ptrs[i], thread_ptrs[free_threads_available++]),
-							task_assignment_map.erase(thread_assignment_map[thread]);
-					queue_mutex.unlock();
-				}
+				queue_mutex.lock();
+				for (i = free_threads_available; i < pool_capacity; ++i)
+					if ((thread = thread_ptrs[i])->IsFree())
+						std::swap(thread_ptrs[i], thread_ptrs[free_threads_available++]),
+						task_assignment_map.erase(thread_assignment_map[thread]);
+				queue_mutex.unlock();
 			}
+		}
 	};
 
 public:
@@ -125,10 +121,10 @@ public:
 	TaskIdType AddTask(const std::shared_ptr<Executable>& executable)
 	{
 		queue_mutex.lock();
-		task_queue.emplace(executable, tasks_accepted);
+		task_queue.emplace(executable, ++tasks_accepted);
 		task_assignment_map[tasks_accepted] = nullptr;
 		queue_mutex.unlock();
-		return tasks_accepted++;
+		return tasks_accepted;
 	}
 
 	inline bool TaskIsDone(TaskIdType task_id) const
@@ -138,6 +134,6 @@ public:
 
 	void WaitTaskForFinished(TaskIdType task_id) const
 	{
-		while (!TaskIsDone(task_id)) Sleep();
+		while (!TaskIsDone(task_id)) Sleep(50);
 	}
 };
