@@ -74,17 +74,22 @@ public:
 int main()
 {
 	int user_input = 1;
+	std::size_t task_id = 0;
 	while (user_input && std::cin >> user_input)
+	{
 		switch (user_input)
 		{
-			case 1: global_thread_pool.AddTask(std::shared_ptr<Task1>(new Task1(int(user_input)))); break;
-			case 2: global_thread_pool.AddTask(std::shared_ptr<Task2>(new Task2(43.321f, 70))); break;
-			case 3: global_thread_pool.AddTask(std::shared_ptr<Task3>(new Task3(false))); break;
+			case 1: task_id = global_thread_pool.AddTask(std::shared_ptr<Task1>(new Task1(int(user_input)))); break;
+			case 2: task_id = global_thread_pool.AddTask(std::shared_ptr<Task2>(new Task2(43.321f, 70))); break;
+			case 3: task_id = global_thread_pool.AddTask(std::shared_ptr<Task3>(new Task3(false))); break;
 		}
-	user_input = 20000;
-	while (--user_input)
-		global_thread_pool.AddTask(std::shared_ptr<Task1>(new Task1(1))),
+		global_thread_pool.WaitTaskForFinished(task_id);
+	}
+	for (std::size_t i = 1; i <= 20000; ++i)
+		global_thread_pool.AddTask(std::shared_ptr<Task1>(new Task1(std::move(i))));
 		std::this_thread::sleep_for(std::chrono::microseconds(100));
+	global_thread_pool.WaitTaskForFinished(30000);
+	global_thread_pool.WaitTaskForFinished(1500);
 	std::this_thread::sleep_for(std::chrono::seconds(100));
 	return 0;
 }

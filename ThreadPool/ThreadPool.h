@@ -54,8 +54,6 @@ template <typename Executable, template <typename> typename FancyPtrT> class Thr
 						executable_ptr.reset();
 					else Sleep(1);
 			};
-
-			//const Task& GetLastTask() const { return task; }
 	};
 
 
@@ -129,7 +127,7 @@ public:
 
 	inline bool TaskIsDone(TaskIdType task_id) const
 	{
-		return !task_assignment_map.count(task_id) && task_id < tasks_accepted;
+		return !task_assignment_map.count(task_id);
 	}
 
 	void WaitTaskForFinished(TaskIdType task_id) const
