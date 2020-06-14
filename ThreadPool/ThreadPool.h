@@ -59,6 +59,7 @@ template <typename Executable, template <typename> typename FancyPtrT> class Thr
 
 	typedef typename Task::IdType TaskIdType;
 	std::mutex queue_mutex;
+	typedef std::lock_guard<decltype(queue_mutex)> lock_guard;
 	std::priority_queue<Task> task_queue;
 	TaskIdType tasks_accepted = 0;
 	std::unordered_map<TaskIdType, Thread*> task_assignment_map;
@@ -86,7 +87,7 @@ template <typename Executable, template <typename> typename FancyPtrT> class Thr
 		{
 			if ((tasks_available = task_queue.size()) && free_threads_available)
 			{
-				queue_mutex.lock();
+				lock_guard lock(queue_mutex);
 				for (i = tasks_available > free_threads_available ? free_threads_available : tasks_available; i--;)
 					thread = thread_ptrs[--free_threads_available],
 					task = &task_queue.top(),
@@ -95,17 +96,15 @@ template <typename Executable, template <typename> typename FancyPtrT> class Thr
 					thread_assignment_map[thread] = task_id,
 					thread->AcceptTask(std::move(task->GetExecutable())),
 					task_queue.pop();
-				queue_mutex.unlock();
 			}
 			Sleep(5);
 			if (free_threads_available < pool_capacity)
 			{
-				queue_mutex.lock();
+				lock_guard lock(queue_mutex);
 				for (i = free_threads_available; i < pool_capacity; ++i)
 					if ((thread = thread_ptrs[i])->IsFree())
 						std::swap(thread_ptrs[i], thread_ptrs[free_threads_available++]),
 						task_assignment_map.erase(thread_assignment_map[thread]);
-				queue_mutex.unlock();
 			}
 		}
 	};
@@ -118,10 +117,9 @@ public:
 
 	TaskIdType AddTask(const std::shared_ptr<Executable>& executable)
 	{
-		queue_mutex.lock();
+		lock_guard lock(queue_mutex);
 		task_queue.emplace(executable, ++tasks_accepted);
 		task_assignment_map[tasks_accepted] = nullptr;
-		queue_mutex.unlock();
 		return tasks_accepted;
 	}
 

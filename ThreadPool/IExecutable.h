@@ -17,5 +17,5 @@ template <typename ...Args> class IExecutableT : public IExecutable
 	public:
 		IExecutableT(Args&&... _args) : args(std::forward<Args>(_args)...) {}
 
-		virtual ~IExecutableT() = default;
+		~IExecutableT() override = default;
 };
