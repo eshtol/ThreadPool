@@ -3,6 +3,7 @@
 #include <unordered_map>
 #include <vector>
 #include <queue>
+#include <condition_variable>
 
 template <typename Executable, template <typename> typename FancyPtrT> class ThreadPool
 {
@@ -41,18 +42,25 @@ template <typename Executable, template <typename> typename FancyPtrT> class Thr
 
 			inline void WaitTaskForFinished() const { while (!IsFree()) Sleep(50); }
 
-			void AcceptTask(const ExecutablePtr&& _task) { executable_ptr = _task; }
+			void AcceptTask(const ExecutablePtr&& _task) 
+			{
+				executable_ptr = std::move(_task); 
+				have_task.notify_one();
+			}
 
 		private:
 			ExecutablePtr executable_ptr;
+			std::mutex task_mtx;
+			std::condition_variable have_task;
 
 			std::function<void()> ThreadLoop = [&]()
 			{
+				std::unique_lock<decltype(task_mtx)> task_lock(task_mtx);
+				const auto have_task_pred = [this]() { return executable_ptr; };
 				while (true)
-					if (executable_ptr)
-						executable_ptr->execute(),
-						executable_ptr.reset();
-					else Sleep(1);
+					have_task.wait(task_lock, have_task_pred),
+					executable_ptr->execute(),
+					executable_ptr.reset();
 			};
 	};
 

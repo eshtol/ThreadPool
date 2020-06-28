@@ -10,7 +10,7 @@
 
 typedef ThreadPool<IExecutable, std::shared_ptr> StandardThreadPool;
 
-static StandardThreadPool global_thread_pool;
+static StandardThreadPool global_thread_pool(500);
 
 
 
