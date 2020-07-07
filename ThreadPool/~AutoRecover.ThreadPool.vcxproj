@@ -159,7 +159,9 @@
     </Link>
   </ItemDefinitionGroup>
   <ItemGroup>
+    <ClInclude Include="ConcurrentContainers.h" />
     <ClInclude Include="IExecutable.h" />
+    <ClInclude Include="TaskQueueThread.h" />
   </ItemGroup>
   <ItemGroup>
     <ClCompile Include="main.cpp" />

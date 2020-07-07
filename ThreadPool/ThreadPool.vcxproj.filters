@@ -18,6 +18,12 @@
     <ClInclude Include="IExecutable.h">
       <Filter>Header Files</Filter>
     </ClInclude>
+    <ClInclude Include="TaskQueueThread.h">
+      <Filter>Header Files</Filter>
+    </ClInclude>
+    <ClInclude Include="ConcurrentContainers.h">
+      <Filter>Header Files</Filter>
+    </ClInclude>
   </ItemGroup>
   <ItemGroup>
     <ClCompile Include="main.cpp">
